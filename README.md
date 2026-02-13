@@ -365,7 +365,60 @@ _Note: First-time borrowers start at lower limits regardless of score. Limits in
 
 ## Self-Registration Flow
 
-<img width="8192" height="6644" alt="STRCUTURAL DIAG" src="https://github.com/user-attachments/assets/4ae9be15-7464-45b4-9b33-83b36adf564c" />
+```mermaid
+sequenceDiagram
+    participant C as Customer
+    participant App as Flutter App
+    participant API as FastAPI Backend
+    participant NIRA as NIRA API
+    participant UCC as UCC Portal
+    participant CRB as CRB Bureau
+    participant Scoring as Scoring Engine
+    participant MoMo as MTN MoMo
+
+    C->>App: Download & Open App
+    App->>C: Show Registration Form
+
+    C->>App: Fill Details (Phone/NIN/DOB/etc)
+    C->>App: Upload Selfie
+    C->>App: Sign Consent (Digital Signature)
+
+    App->>API: POST /auth/register
+
+    par Parallel Verification
+        API->>NIRA: Verify NIN + DOB
+        NIRA-->>API: ✓ Identity Confirmed
+
+        API->>CRB: Check Credit History
+        CRB-->>API: Credit Report (Defaults, Active Loans)
+
+        API->>UCC: Validate IMEI + MSISDN
+        UCC-->>API: Device Info + Telecom Data
+    end
+
+    API->>Scoring: Calculate Score (4 Components)
+    Scoring->>Scoring: ML Model Inference
+    Scoring-->>API: Score + Loan Offer
+
+    alt Score >= 0.3
+        API->>App: ✓ Registration Success + Loan Offer
+        App->>C: Show Loan Terms (Amount/Interest/Term)
+
+        C->>App: Accept Loan
+        App->>API: POST /loans/accept
+
+        API->>MoMo: Disburse Funds to Customer Wallet
+        MoMo-->>API: ✓ Transaction Success (Ref: MTN123456)
+
+        API->>App: ✓ Loan Active + Receipt
+        App->>C: Show Success + Repayment Schedule
+
+    else Score < 0.3
+        API->>App: ✓ Registration Success but Low Score
+        App->>C:  Loan Denied - Tips to Improve Score
+        Note over App,C: "Use your SIM for 6+ months"<br/>"Maintain regular airtime top-ups"<br/>"Keep device for longer"
+    end
+```
 
 
 ---
@@ -510,6 +563,3 @@ _"Expanding financial access while protecting the vulnerable."_
 
 **Built for Uganda's underbanked. Powered by behavioral intelligence.**
 
-```
-
-```
