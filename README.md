@@ -397,7 +397,7 @@ sequenceDiagram
     end
 
     API->>Scoring: Calculate Score (4 Components)
-    Scoring->>Scoring: ML Model Inference
+
     Scoring-->>API: Score + Loan Offer
 
     alt Score >= 0.3
